@@ -4,5 +4,6 @@ export interface SongTag {
 }
 
 export interface Audio {
-    url: String
+    url: String,
+    duration: String // in seconds
 }

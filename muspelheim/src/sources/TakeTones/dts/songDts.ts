@@ -22,13 +22,15 @@ export const getTransformedSong = (song: TakeTonesSong) => {
 
 const getAudio = (song: TakeTonesSong) => {
     const audio: Audio = {
-        url: ''
+        url: '',
+        duration: ''
     }
     const fullSong = song.audio.find((audio) => {
         return audio.name === 'full'
     })
     if (fullSong) {
         audio.url = fullSong.url
+        audio.duration = fullSong.duration
     }
     return audio;
 }

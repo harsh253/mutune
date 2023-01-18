@@ -20,5 +20,6 @@ export interface MediaApis {
 export interface SongTag extends TakeTonesSongTag { }
 
 export interface Audio {
-    url: String
+    url: String,
+    duration: String //in seconds
 }

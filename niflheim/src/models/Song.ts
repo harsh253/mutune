@@ -8,7 +8,8 @@ export interface SongSchema {
     authorName: String,
     tags: SongTag[],
     audio: Audio,
-    source: String
+    source: String,
+    isUsed?: Boolean
 }
 
 const songSchema = new Schema({
@@ -21,7 +22,8 @@ const songSchema = new Schema({
         type: Object,
         required: true
     },
-    source: String
+    source: String,
+    isUsed: Boolean
 })
 
 export const Song = model<SongSchema>('Song', songSchema)
