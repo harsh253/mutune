@@ -2,13 +2,13 @@ import { model, Schema } from "mongoose"
 import { Audio, SongTag } from "../types"
 
 export interface SongSchema {
-    id: String,
-    name: String,
-    description: String,
-    authorName: String,
+    id: string,
+    name: string,
+    description: string,
+    authorName: string,
     tags: SongTag[],
     audio: Audio,
-    source: String,
+    source: string,
     isUsed?: Boolean
 }
 
