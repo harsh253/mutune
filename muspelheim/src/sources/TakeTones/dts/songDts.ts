@@ -1,5 +1,5 @@
 import { SongSchema } from "../../../models/Song";
-import { Audio, MediaSources } from "../../../types";
+import { Audio, MediaSources, SongTag } from "../../../types";
 import { TakeTonesSong } from "../types";
 
 const getModifiedSongId = (song: TakeTonesSong) => {
@@ -7,17 +7,29 @@ const getModifiedSongId = (song: TakeTonesSong) => {
     return modifiedSongId;
 }
 
-export const getTransformedSong = (song: TakeTonesSong) => {
+export const getTransformedSong = (song: TakeTonesSong, tag: string) => {
     let transformedSong: SongSchema = {
         id: getModifiedSongId(song),
         name: song.name,
         audio: getAudio(song),
         authorName: song.author_name,
         description: song.description,
-        tags: song.tags,
+        tags: tagAudio(song, tag),
         source: MediaSources.TakeTones
     };
     return transformedSong;
+}
+
+const tagAudio = (song: TakeTonesSong, tag: string) => {
+    const existingTags = song.tags;
+    const isTagPresent = existingTags.find((existingTag) => existingTag.slug.toLowerCase() === tag.toLowerCase());
+    if(!isTagPresent){
+        song.tags.push({
+            name: tag.toUpperCase(),
+            slug: tag.toLowerCase()
+        })
+    }
+    return song.tags;
 }
 
 const getAudio = (song: TakeTonesSong) => {

@@ -29,7 +29,7 @@ export class TakeTonesApi implements MediaApis {
                 const { data } = response;
                 const { links = {}, data: songList } = data;
                 const transformedSongList = songList.map((song) => {
-                    return getTransformedSong(song);
+                    return getTransformedSong(song, tag);
                 })
                 songs.push(...transformedSongList);
                 hasNext = Boolean(links.next);
