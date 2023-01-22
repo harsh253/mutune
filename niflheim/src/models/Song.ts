@@ -9,7 +9,7 @@ export interface SongSchema {
     tags: SongTag[],
     audio: Audio,
     source: string,
-    isUsed?: Boolean
+    isUsed?: string[]
 }
 
 const songSchema = new Schema({
@@ -23,7 +23,7 @@ const songSchema = new Schema({
         required: true
     },
     source: String,
-    isUsed: Boolean
+    isUsed: Array
 })
 
 export const Song = model<SongSchema>('Song', songSchema)

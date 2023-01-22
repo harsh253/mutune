@@ -1,11 +1,11 @@
 import { ERROR_MESSAGES } from '../errorHandlers/errorMessages';
-import { Song } from '../models/Song';
+import { Song, SongSchema } from '../models/Song';
 import dotenv from 'dotenv';
 import { downloadFromURL } from '../utils';
 
-const { SONG_LIST_GENERATION_ERROR, DURATION_MISSING } = ERROR_MESSAGES.AUDIO_SERVICE;
-const { FINAL_SONG_FOLDER_PATH } = process.env
 dotenv.config();
+const { SONG_LIST_GENERATION_ERROR, DURATION_MISSING } = ERROR_MESSAGES.AUDIO_SERVICE;
+
 
 export class AudioService {
     /**
@@ -13,23 +13,28 @@ export class AudioService {
      * @param duration Durationn of final song
      * @returns an object with array of songs to be merged. Also returns totalDuration of final song and total songs merged
      */
-    getSongsForDuration = async (duration: number) => {
+    getSongsForDuration = async (duration: number, tag:string) => {
         if (duration) {
             const requiredDurationInSec = duration * 60
             const songsToMerge = []
             let index = 0;
             let durationSum = 0;
             try {
-                let firstUnusedSong = await Song.findOne({ isUsed: { $in: [null, false] } })
-                songsToMerge.push(firstUnusedSong);
-                index += 1;
-                durationSum += parseFloat(firstUnusedSong.audio.duration as string);
-
-                const requiredSongsListCursor = Song.find({ _id: { $gt: firstUnusedSong._id } }).cursor();
-                for (let nextSong = await requiredSongsListCursor.next(); nextSong != null && durationSum <= requiredDurationInSec; nextSong = await requiredSongsListCursor.next()) {
-                    songsToMerge.push(nextSong);
-                    durationSum += parseFloat(nextSong.audio.duration as string);
+                let firstUnusedSong = await Song.findOne({ isUsed: { $ne: tag }, "tags.slug": { $in: [tag] } })
+                if (firstUnusedSong) {
+                    songsToMerge.push(firstUnusedSong);
                     index += 1;
+                    durationSum += parseFloat(firstUnusedSong.audio.duration as string);
+
+                    const requiredSongsListCursor = Song.find({ _id: { $gt: firstUnusedSong._id } }).cursor();
+                    for (let nextSong = await requiredSongsListCursor.next(); nextSong != null && durationSum <= requiredDurationInSec; nextSong = await requiredSongsListCursor.next()) {
+                        console.log(nextSong.isUsed, nextSong.name)
+                        if (nextSong.isUsed.includes(tag)) continue;
+
+                        songsToMerge.push(nextSong);
+                        durationSum += parseFloat(nextSong.audio.duration as string);
+                        index += 1;
+                    }
                 }
                 return {
                     songs: songsToMerge,
@@ -45,19 +50,36 @@ export class AudioService {
         }
     }
 
-    async downloadSong(url: string, filename: string) {
-        const date = new Date();
-        const outputFolder = FINAL_SONG_FOLDER_PATH
+    async setAudioIsUsedForTag(song: SongSchema, tag: string) {
+        const filter = { id: song.id }
+        const update = {
+            // $set: { isUsed: [] },
+            // // isUsed: { '$ne': tag },
+            $addToSet: { isUsed: tag }
+            // { $concat: [ "", [value] ] }
+        }
+        try {
+            await Song.findOneAndUpdate(filter, update);
+        } catch (err) {
+            console.log(err)
+            console.log("Could not update isUsed flag for -", song)
+        }
+    }
+
+    async downloadSong(url: string, filename: string, outputFolder: string) {
+
         if (outputFolder) {
-            const folderName = `${outputFolder}/${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`
             try {
                 console.log("Attempting to downloading file", filename)
-                return await downloadFromURL({ url, outputFolder: folderName, filename, fileFormat: 'mp3' });
+                const isDownloaded = await downloadFromURL({ url, outputFolder, filename, fileFormat: 'mp3' });
+                return {
+                    isNewDownload: isDownloaded
+                }
             } catch (err) {
                 console.log(err)
                 throw new Error(err);
             }
-        }else{
+        } else {
             throw new Error("Output Folder not provided");
         }
     }
