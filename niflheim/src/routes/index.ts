@@ -2,7 +2,7 @@ import { Request, Response, Router } from "express";
 import { AudioService } from "../services/AudioService";
 import { SongsData } from "../types";
 import dotenv from 'dotenv';
-import { MediaConcatService } from "../services/MediaConcat";
+import { MediaService } from "../services/MediaConcat";
 
 dotenv.config();
 const router = Router();
@@ -32,7 +32,7 @@ router.get('/songs', async (req: Request, res: Response) => {
         let isConcatenationSuccessful = false;
 
         const audioService = new AudioService();
-        const mediaConcatService = new MediaConcatService()
+        const mediaService = new MediaService()
 
         /**
          * Get list of songs that have not been used already and whose duration adds up to provided duration
@@ -71,7 +71,7 @@ router.get('/songs', async (req: Request, res: Response) => {
          * Use concatenation service to merge the above audio files 
          */
         try {
-            const response = await mediaConcatService.concatenateAudios({
+            const response = await mediaService.concatenateAudios({
                 fileFormat: 'mp3',
                 inputFolderLocation: downloadedFilesLocation,
                 outputFolderLocation: downloadedFilesLocation,
@@ -90,7 +90,7 @@ router.get('/songs', async (req: Request, res: Response) => {
          * Add current tag to isUsed for above songs if they have been merged succesfully
          */
         if (isConcatenationSuccessful) {
-            console.log("All songs are merged. Setting isUsed flag")
+            console.log("All songs are merged.")
             try {
                 for(let i=0; i<songsData.songs.length; i++){
                     await audioService.setAudioIsUsedForTag(songsData.songs[i], tag as string);

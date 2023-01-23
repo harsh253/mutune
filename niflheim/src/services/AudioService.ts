@@ -28,7 +28,6 @@ export class AudioService {
 
                     const requiredSongsListCursor = Song.find({ _id: { $gt: firstUnusedSong._id } }).cursor();
                     for (let nextSong = await requiredSongsListCursor.next(); nextSong != null && durationSum <= requiredDurationInSec; nextSong = await requiredSongsListCursor.next()) {
-                        console.log(nextSong.isUsed, nextSong.name)
                         if (nextSong.isUsed.includes(tag)) continue;
 
                         songsToMerge.push(nextSong);
@@ -53,10 +52,7 @@ export class AudioService {
     async setAudioIsUsedForTag(song: SongSchema, tag: string) {
         const filter = { id: song.id }
         const update = {
-            // $set: { isUsed: [] },
-            // // isUsed: { '$ne': tag },
             $addToSet: { isUsed: tag }
-            // { $concat: [ "", [value] ] }
         }
         try {
             await Song.findOneAndUpdate(filter, update);

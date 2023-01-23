@@ -5,7 +5,7 @@ dotenv.config();
 
 const { MEDIA_CONCATENATION_SERVICE_URL } = process.env
 
-export class MediaConcatService {
+export class MediaService {
 
     async concatenateAudios({ inputFolderLocation, fileFormat = 'mp3', outputFolderLocation, outputFileName }: { inputFolderLocation: string, fileFormat: string, outputFolderLocation: string, outputFileName?: string }) {
         try {
@@ -23,5 +23,7 @@ export class MediaConcatService {
             return err;
         }
     }
+
+
 
 }
