@@ -36,6 +36,9 @@ export const createFileIfNotExists = (outputFile: fs.WriteStream, outputFolder: 
                 console.log("Finished writing file - ", filename)
             })
             outputFile.on('ready', () => {
+                outputFile.close()
+            })
+            outputFile.on('close', () => {
                 res(outputFile);
             })
 
@@ -78,3 +81,16 @@ export const downloadFromURL = async ({ url, outputFolder, filename, fileFormat 
     }
 }
 
+
+export const deleteDirectory = (directoryToDelete: string) => {
+    return new Promise((res, rej) => {
+        fs.rm(directoryToDelete, { recursive: true }, (err) => {
+            if (err) {
+                rej(err)
+            } else {
+                console.log("Deleted directory - ", directoryToDelete)
+                res(directoryToDelete);
+            }
+        })
+    })
+}

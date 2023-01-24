@@ -3,11 +3,12 @@ import { AudioService } from "../services/AudioService";
 import { SongsData } from "../types";
 import dotenv from 'dotenv';
 import { MediaService } from "../services/MediaConcat";
+import { deleteDirectory } from "../utils";
 
 dotenv.config();
 const router = Router();
 const { FINAL_SONG_FOLDER_PATH } = process.env
-
+const AUDIO_FILE_FORMAT = 'mp3'
 /**
  * Accepts duration as a query param
  * Duration is in mins
@@ -49,11 +50,11 @@ router.get('/songs', async (req: Request, res: Response) => {
          */
         try {
             const date = new Date();
-            const folderName = `${FINAL_SONG_FOLDER_PATH}/${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}-${date.valueOf()}`
+            const folderName = `${FINAL_SONG_FOLDER_PATH}/${date.valueOf()}`
             for (let i = 0; i < songsData.songs.length; i++) {
                 const fileName = `${songsData.songs[i].id}-${songsData.songs[i].name}-${tag as string}`
                 const response = await audioService.downloadSong(songsData.songs[i].audio.url, fileName, folderName)
-                const { isNewDownload} = response;
+                const { isNewDownload } = response;
                 if (isNewDownload) {
                     downloadedSongs.push(songsData.songs[i]);
                 } else {
@@ -72,13 +73,15 @@ router.get('/songs', async (req: Request, res: Response) => {
          */
         try {
             const response = await mediaService.concatenateAudios({
-                fileFormat: 'mp3',
+                fileFormat: AUDIO_FILE_FORMAT,
                 inputFolderLocation: downloadedFilesLocation,
                 outputFolderLocation: downloadedFilesLocation,
                 outputFileName: outputFileName as string
             })
-            isConcatenationSuccessful = true;
-            mergedFilesLocation = response.file;
+            if (response?.file) {
+                isConcatenationSuccessful = true;
+                mergedFilesLocation = downloadedFilesLocation;
+            }
         } catch (err) {
             console.log("Error while concatenating audios", err)
             return res.status(500).send({
@@ -88,15 +91,17 @@ router.get('/songs', async (req: Request, res: Response) => {
 
         /**
          * Add current tag to isUsed for above songs if they have been merged succesfully
+         * else delete the folder where all files were downloaded
          */
         if (isConcatenationSuccessful) {
             console.log("All songs are merged.")
             try {
-                for(let i=0; i<songsData.songs.length; i++){
+                for (let i = 0; i < songsData.songs.length; i++) {
                     await audioService.setAudioIsUsedForTag(songsData.songs[i], tag as string);
                 }
                 return res.status(200).send({
-                    mergedFilesLocation
+                    mergedFilesLocation,
+                    outputFileName: `${outputFileName}.${AUDIO_FILE_FORMAT}`
                 })
             } catch (err) {
                 console.log("Error while updating isUsed flag");
@@ -104,6 +109,16 @@ router.get('/songs', async (req: Request, res: Response) => {
                     message: `"Error while updating isUsed flag - ${err.message}`
                 });
             }
+        } else {
+            try {
+                console.log("Deleting files")
+                await deleteDirectory(downloadedFilesLocation)
+            } catch (err) {
+                console.log(err);
+            }
+            return res.status(200).send({
+                message: "Audio files could not be merged"
+            })
         }
 
     } else {
