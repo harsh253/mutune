@@ -31,6 +31,8 @@ router.get('/songs', async (req: Request, res: Response) => {
         let downloadedFilesLocation = ''
         let mergedFilesLocation = ''
         let isConcatenationSuccessful = false;
+        const date = new Date();
+        const newFolderName = date.valueOf()
 
         const audioService = new AudioService();
         const mediaService = new MediaService()
@@ -49,8 +51,7 @@ router.get('/songs', async (req: Request, res: Response) => {
          * Attempt to download the songs fetched above. If the songs already exist, they won't be re downloaded
          */
         try {
-            const date = new Date();
-            const folderName = `${FINAL_SONG_FOLDER_PATH}/${date.valueOf()}`
+            const folderName = `${FINAL_SONG_FOLDER_PATH}/${newFolderName}`
             for (let i = 0; i < songsData.songs.length; i++) {
                 const fileName = `${songsData.songs[i].id}-${songsData.songs[i].name}-${tag as string}`
                 const response = await audioService.downloadSong(songsData.songs[i].audio.url, fileName, folderName)
@@ -100,7 +101,8 @@ router.get('/songs', async (req: Request, res: Response) => {
                     await audioService.setAudioIsUsedForTag(songsData.songs[i], tag as string);
                 }
                 return res.status(200).send({
-                    mergedFilesLocation,
+                    mergedFilesLocation: FINAL_SONG_FOLDER_PATH,
+                    outputFolderName: newFolderName,
                     outputFileName: `${outputFileName}.${AUDIO_FILE_FORMAT}`
                 })
             } catch (err) {
@@ -111,7 +113,7 @@ router.get('/songs', async (req: Request, res: Response) => {
             }
         } else {
             try {
-                console.log("Deleting files")
+                console.log("Deleting files as audio merging was not succesful")
                 await deleteDirectory(downloadedFilesLocation)
             } catch (err) {
                 console.log(err);
